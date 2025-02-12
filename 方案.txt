@@ -1,0 +1,9 @@
+lantern-riddles-web/
+├── app.py              # Flask后端主程序
+├── requirements.txt    # 依赖库列表
+├── riddles.json        # 数据存储文件（首次运行自动生成）
+├── static/             # 静态资源目录
+│   └── style.css       # 自定义样式表
+└── templates/
+    └── index.html      # 前端页面
+    

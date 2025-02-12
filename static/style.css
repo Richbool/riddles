@@ -1,0 +1,31 @@
+body {
+    background-color: #f8f9fa;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 800px;
+    padding-bottom: 50px;
+}
+
+.card {
+    border-radius: 15px;
+    border: none;
+}
+
+.btn {
+    font-weight: 500;
+    transition: all 0.3s ease;
+}
+
+.btn-success {
+    background-color: #20c997;
+}
+
+.btn-success:hover {
+    background-color: #198754;
+}
+
+.alert {
+    border-radius: 10px;
+}
