@@ -1,67 +1,89 @@
 import os
-import random
 import json
-from flask import Flask, render_template, request, jsonify
+import random
+from flask import Flask, render_template, request, redirect, url_for, session
 
-app = Flask(__name__)
-DATA_FILE = 'riddles.json'
+app = Flask(__name__, static_folder='static', template_folder='templates')
+app.secret_key = os.urandom(24)  # 安全会话密钥
 
-def load_riddles():
-    """加载灯谜数据"""
-    if not os.path.exists(DATA_FILE):
-        return []
+# 数据文件路径
+def get_riddles_path():
+    return os.path.join(os.path.dirname(__file__), 'riddles.json')
+
+# 初始化题库文件
+def init_riddles_file():
+    file_path = get_riddles_path()
+    if not os.path.exists(file_path):
+        with open(file_path, 'w', encoding='utf-8') as f:
+            json.dump([], f)
+
+# 加载验证题库
+def load_valid_riddles():
+    file_path = get_riddles_path()
     try:
-        with open(DATA_FILE, 'r', encoding='utf-8') as f:
-            return json.load(f)
+        with open(file_path, 'r', encoding='utf-8') as f:
+            riddles = json.load(f)
+        return [r for r in riddles if isinstance(r, dict) and r.get('riddle') and r.get('answer')]
     except:
         return []
 
-def save_riddles(data):
-    """保存灯谜数据"""
-    with open(DATA_FILE, 'w', encoding='utf-8') as f:
-        json.dump(data, f, ensure_ascii=False, indent=2)
-
 @app.route('/')
-def home():
-    """主页面"""
-    return render_template('index.html', count=len(load_riddles()))
+def index():
+    init_riddles_file()
+    riddles = load_valid_riddles()
+    return render_template('index.html', 
+                         riddle_count=len(riddles),
+                         current_riddle=session.get('current_riddle'))
 
-@app.route('/api/riddles', methods=['GET', 'POST'])
-def handle_riddles():
-    """灯谜API接口"""
+@app.route('/add', methods=['POST'])
+def add_riddle():
+    riddle = request.form.get('riddle', '').strip()
+    answer = request.form.get('answer', '').strip()
+    
+    if not riddle or not answer:
+        return render_template('index.html', 
+                             error="❌ 灯谜和答案不能为空！",
+                             riddle_count=len(load_valid_riddles()))
+
+    try:
+        riddles = load_valid_riddles()
+        riddles.append({'riddle': riddle, 'answer': answer})
+        with open(get_riddles_path(), 'w', encoding='utf-8') as f:
+            json.dump(riddles, f, ensure_ascii=False, indent=2)
+    except Exception as e:
+        return render_template('index.html',
+                             error=f"❌ 保存失败：{str(e)}",
+                             riddle_count=len(riddles))
+
+    return redirect(url_for('index'))
+
+@app.route('/guess', methods=['GET', 'POST'])
+def guess_riddle():
+    riddles = load_valid_riddles()
+    
     if request.method == 'GET':
-        # 获取随机灯谜
-        riddles = load_riddles()
         if not riddles:
-            return jsonify({"error": "暂无灯谜，请先添加"})
-        return jsonify(random.choice(riddles))
+            return render_template('index.html',
+                                 error="❌ 题库为空，请先添加灯谜！",
+                                 riddle_count=0)
+        selected = random.choice(riddles)
+        session['current_riddle'] = selected['riddle']
+        session['current_answer'] = selected['answer']
+        return redirect(url_for('index'))
 
     elif request.method == 'POST':
-        # 添加新灯谜
-        data = request.json
-        if not data.get('question') or not data.get('answer'):
-            return jsonify({"error": "谜题和答案不能为空"}), 400
-
-        riddles = load_riddles()
-        riddles.append({
-            "question": data['question'].strip(),
-            "answer": data['answer'].strip().lower()
-        })
-        save_riddles(riddles)
-        return jsonify({"message": "添加成功", "count": len(riddles)})
-
-@app.route('/api/check', methods=['POST'])
-def check_answer():
-    """答案验证接口"""
-    data = request.json
-    riddles = load_riddles()
-
-    for riddle in riddles:
-        if riddle['question'] == data['question']:
-            correct = (data['answer'].strip().lower() == riddle['answer'])
-            return jsonify({"correct": correct, "answer": riddle['answer']})
-
-    return jsonify({"error": "未找到对应灯谜"}), 404
+        user_answer = request.form.get('answer', '').strip().lower()
+        correct_answer = session.get('current_answer', '').lower()
+        
+        result = {
+            'text': "✅ 猜对了！" if user_answer == correct_answer 
+                   else f"❌ 正确答案：{session['current_answer']}",
+            'is_correct': user_answer == correct_answer
+        }
+        return render_template('index.html',
+                             result=result,
+                             riddle_count=len(riddles),
+                             current_riddle=session.get('current_riddle'))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(debug=True)
