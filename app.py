@@ -1,81 +1,89 @@
 # app.py
-import os
+from flask import Flask, render_template, session, redirect, url_for
 import json
 import random
-from flask import Flask, render_template, request, session, redirect, url_for
+import os
+from urllib.parse import unquote
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
-app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['JSON_AS_ASCII'] = False
 
-RIDDLE_FILE = 'riddles.json'
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+RIDDLE_FILE = os.path.join(BASE_DIR, 'riddles.json')
 
 def load_riddles():
     try:
         with open(RIDDLE_FILE, 'r', encoding='utf-8') as f:
             return json.load(f)
-    except (FileNotFoundError, json.JSONDecodeError):
+    except Exception as e:
+        print(f"题库加载失败: {str(e)}")
         return []
 
-def save_riddle(riddle, answer):
-    riddles = load_riddles()
-    riddles.append({'riddle': riddle, 'answer': answer.lower()})
-    with open(RIDDLE_FILE, 'w', encoding='utf-8') as f:
-        json.dump(riddles, f, ensure_ascii=False, indent=2)
+@app.before_request
+def check_session():
+    excluded = ['home', 'start_game', 'static']
+    if request.endpoint not in excluded:
+        if 'current_riddle' not in session and request.endpoint != 'next_riddle':
+            return redirect(url_for('start_game'))
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
-    if request.method == 'POST':
-        riddle = request.form.get('riddle', '').strip()
-        answer = request.form.get('answer', '').strip()
-        if len(riddle) > 3 and len(answer) > 1:
-            save_riddle(riddle, answer)
-        return redirect(url_for('index'))
+@app.route('/')
+def home():
+    session.clear()
+    return render_template('index.html')
 
-    riddles = load_riddles()
-    current = session.get('current', {}).get('text') if 'current' in session else None
-    result = session.pop('result', None) if 'result' in session else None
-    return render_template('index.html',
-                         riddles=riddles,
-                         current=current,
-                         result=result)
-
-@app.route('/new')
-def new_riddle():
+@app.route('/start')
+def start_game():
     riddles = load_riddles()
     if not riddles:
-        return redirect(url_for('index'))
+        return redirect(url_for('home'))
 
-    previous_id = session.get('current', {}).get('id', -1)
-    available = [i for i in range(len(riddles)) if i != previous_id]
-    selected_id = random.choice(available) if available else 0
+    used_ids = session.get('used_ids', [])
+    available_ids = [i for i in range(len(riddles)) if i not in used_ids]
 
-    session['current'] = {
+    if not available_ids:
+        session['used_ids'] = []
+        available_ids = list(range(len(riddles)))
+
+    selected_id = random.choice(available_ids)
+    session.setdefault('used_ids', []).append(selected_id)
+
+    session['current_riddle'] = {
         'id': selected_id,
         'text': riddles[selected_id]['riddle'],
         'answer': riddles[selected_id]['answer'].lower()
     }
-    return redirect(url_for('index'))
+    return redirect(url_for('play'))
 
-@app.route('/submit', methods=['POST'])
-def submit_answer():
-    if 'current' not in session:
-        return redirect(url_for('index'))
+@app.route('/play')
+def play():
+    result = session.pop('result', None)
+    current = session.get('current_riddle')
+    return render_template('index.html',
+                         riddle_text=current['text'] if current else None,
+                         result=result)
 
-    user_answer = request.form.get('answer', '').strip().lower()
-    correct_answer = session['current']['answer']
+@app.route('/check/<path:user_answer>')
+def check_answer(user_answer):
+    try:
+        user_ans = unquote(user_answer).strip().lower()
+    except:
+        user_ans = ''
 
+    correct = session['current_riddle']['answer']
     result = {
-        'is_correct': user_answer == correct_answer,
-        'user_answer': user_answer,
-        'correct_answer': correct_answer,
-        'question': session['current']['text']
+        'is_correct': user_ans == correct,
+        'user_answer': user_ans,
+        'correct_answer': correct
     }
-
     session['result'] = result
-    if result['is_correct']:
-        session.pop('current', None)
-    return redirect(url_for('index'))
+    return redirect(url_for('play'))
+
+@app.route('/next')
+def next_riddle():
+    session.pop('current_riddle', None)
+    session.pop('result', None)
+    return redirect(url_for('start_game'))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    app.run(host='0.0.0.0', port=5000)
