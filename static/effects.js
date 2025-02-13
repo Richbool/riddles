@@ -1,28 +1,41 @@
-function handleSubmit(form) {
-    const btn = form.querySelector('button[type="submit"]');
-    btn.disabled = true;
-    btn.innerHTML = '<div class="loader"></div> 校验中...';
-    
-    // 清理旧结果
-    document.querySelectorAll('.result').forEach(el => el.remove());
+// 初始化节日效果
+function initFestival() {
+    // 动态生成灯笼
+    const container = document.querySelector('.lanterns');
+    for (let i = 0; i < 6; i++) {
+        const lantern = document.createElement('div');
+        lantern.className = 'lantern';
+        lantern.textContent = '🏮';
+        lantern.style.left = `${Math.random() * 100}%`;
+        lantern.style.animationDelay = `${Math.random() * 3}s`;
+        container.appendChild(lantern);
+    }
+
+    // 点击烟花效果
+    document.addEventListener('click', (e) => {
+        const spark = document.createElement('div');
+        spark.style.cssText = `
+            position: absolute;
+            left: ${e.clientX}px;
+            top: ${e.clientY}px;
+            width: 10px;
+            height: 10px;
+            background: radial-gradient(circle, #ffeb3b 30%, transparent 70%);
+            animation: spark 0.8s linear;
+        `;
+        document.body.appendChild(spark);
+        setTimeout(() => spark.remove(), 800);
+    });
 }
 
-function lockForm(form) {
-    form.querySelector('button').disabled = true;
-}
-
-function showLoader() {
-    const btn = document.querySelector('.btn');
-    if (btn) {
-        btn.innerHTML = '<div class="loader"></div> 加载中...';
+// 重试功能
+function retry() {
+    const input = document.querySelector('input[name="answer"]');
+    if (input) {
+        input.focus();
+        input.select();
     }
 }
 
-// 防止重复提交
-document.addEventListener('DOMContentLoaded', () => {
-    document.querySelectorAll('form').forEach(form => {
-        form.addEventListener('submit', () => {
-            form.querySelector('button').disabled = true;
-        });
-    });
-});
+// 启动
+document.addEventListener('DOMContentLoaded', initFestival);
