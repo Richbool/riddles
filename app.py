@@ -1,7 +1,8 @@
-import os
+# app.py
+from flask import Flask, render_template, session, redirect, url_for
 import json
 import random
-from flask import Flask, render_template, session, redirect, url_for
+import os
 from urllib.parse import unquote
 
 app = Flask(__name__)
@@ -65,16 +66,15 @@ def play():
 @app.route('/check/<path:user_answer>')
 def check_answer(user_answer):
     try:
-        # 单次解码修复乱码
-        decoded_answer = unquote(user_answer).lower().strip()
+        user_ans = unquote(user_answer).strip().lower()
     except:
-        decoded_answer = ""
+        user_ans = ''
 
-    correct_answer = session['current_riddle']['answer']
+    correct = session['current_riddle']['answer']
     result = {
-        'is_correct': decoded_answer == correct_answer,
-        'user_answer': decoded_answer,
-        'correct_answer': correct_answer
+        'is_correct': user_ans == correct,
+        'user_answer': user_ans,
+        'correct_answer': correct
     }
     session['result'] = result
     return redirect(url_for('play'))
