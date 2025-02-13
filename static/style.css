@@ -1,42 +1,68 @@
-/* 新增关键样式 */
-.loader {
-    display: inline-block;
-    width: 12px;
-    height: 12px;
-    border: 2px solid #fff;
-    border-radius: 50%;
-    border-top-color: transparent;
-    animation: spin 0.8s linear infinite;
+/* 节日背景 */
+body {
+    background: #d32f2f;
+    min-height: 100vh;
+    position: relative;
+    overflow-x: hidden;
 }
 
-@keyframes spin {
-    to { transform: rotate(360deg); }
+/* 灯笼动画 */
+.lanterns {
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    pointer-events: none;
+    z-index: 0;
 }
 
+.lantern {
+    position: absolute;
+    font-size: 2rem;
+    animation: float 8s infinite ease-in-out;
+    opacity: 0.8;
+}
+
+@keyframes float {
+    0%, 100% { transform: translateY(0) rotate(-5deg); }
+    50% { transform: translateY(-100px) rotate(5deg); }
+}
+
+/* 卡片效果 */
+.container {
+    position: relative;
+    z-index: 1;
+    max-width: 800px;
+    margin: 0 auto;
+    padding: 2rem;
+}
+
+.card {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 15px;
+    padding: 1.5rem;
+    margin: 1rem 0;
+    box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+}
+
+/* 结果样式 */
 .result {
-    border: 2px solid;
-    padding: 1rem;
     margin-top: 1rem;
+    padding: 1rem;
     border-radius: 8px;
+    animation: popIn 0.3s ease;
 }
 
 .result.correct {
-    border-color: #4CAF50;
-    background: #e8f5e9;
+    background: #4CAF50;
+    color: white;
 }
 
 .result.wrong {
-    border-color: #f44336;
-    background: #ffebee;
+    background: #f44336;
+    color: white;
 }
 
-.user-answer {
-    color: #666;
-    font-size: 0.9em;
-    margin-top: 0.5rem;
-}
-
-button:disabled {
-    opacity: 0.7;
-    cursor: not-allowed;
+@keyframes popIn {
+    from { transform: scale(0.9); opacity: 0; }
+    to { transform: scale(1); opacity: 1; }
 }
