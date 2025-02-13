@@ -1,87 +1,59 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>元宵灯谜会</title>
-    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
+    <title>元宵灯谜大会</title>
+    <link rel="stylesheet" href="/static/style.css">
 </head>
 <body>
-    <!-- 动态背景 -->
-    <div class="lanterns">
-        <div class="lantern red swing"></div>
-        <div class="lantern gold swing-delay"></div>
-    </div>
-    <div class="ribbons">
-        <div class="ribbon r1"></div>
-        <div class="ribbon r2"></div>
-        <div class="ribbon r3"></div>
-    </div>
-
-    <!-- 主内容 -->
-    <main class="container">
-        <!-- 标题 -->
-        <h1 class="title">
-            <span>元</span>
-            <span>宵</span>
-            <span>灯</span>
-            <span>谜</span>
-            <span>会</span>
-        </h1>
-
-        <!-- 题库统计 -->
-        <div class="counter-box">
-            <div class="counter">
-                当前题库：<span class="highlight">{{ riddle_count }}</span>条
-            </div>
-        </div>
-
-        <!-- 添加灯谜模块 -->
-        <div class="section add-section">
-            <h2>🎉 添加新灯谜</h2>
-            <form action="/add" method="post">
-                <input type="text" name="riddle" placeholder="输入谜面（示例：白嫩小宝宝，洗澡吹泡泡）" required>
-                <input type="text" name="answer" placeholder="输入答案（示例：沐浴露）" required>
-                <button type="submit" class="glow-btn">✨ 提交灯谜</button>
+    <div class="container">
+        <h1>🎆 元宵灯谜大会 - xrq-rich.com</h1>
+        
+        <!-- 添加灯谜表单 -->
+        <div class="section">
+            <h2>📝 添加新灯谜</h2>
+            <form action="/" method="post" onsubmit="lockForm(this)">
+                <input type="text" name="riddle" placeholder="输入灯谜内容" required>
+                <input type="text" name="answer" placeholder="输入正确答案" required>
+                <button type="submit">添加题库</button>
             </form>
         </div>
 
-        <!-- 猜谜模块 -->
-        <div class="section guess-section">
-            <h2>🏮 猜灯谜</h2>
+        <!-- 猜灯谜模块 -->
+        <div class="section">
+            <h2>🎯 猜灯谜</h2>
             {% if current_riddle %}
-                <div class="riddle-display">
-                    <div class="riddle-text">{{ current_riddle }}</div>
-                    <form action="/guess" method="post">
-                        <input type="text" name="answer" placeholder="输入你的答案..." required>
-                        <div class="action-buttons">
-                            <button type="submit" class="glow-btn">🎯 提交答案</button>
-                            <a href="/guess" class="new-riddle-btn">🔄 换一题</a>
-                        </div>
+                <div class="riddle-box">
+                    <p class="riddle-text">{{ current_riddle }}</p>
+                    <form action="/guess" method="post" onsubmit="handleSubmit(this)">
+                        <input type="text" name="answer" placeholder="输入你的答案" required>
+                        <button type="submit">提交答案</button>
                     </form>
-                    {% if error %}
-                        <div class="result warning">{{ error }}</div>
-                    {% endif %}
-                    {% if result %}
-                        <div class="result {% if result.is_correct %}correct{% else %}wrong{% endif %}">
-                            {{ result.text }}
-                            {% if result.is_correct %}
-                                <div class="celebration">🎉</div>
-                            {% endif %}
-                        </div>
-                    {% endif %}
                 </div>
             {% else %}
-                <form action="/guess" method="get">
-                    <button type="submit" class="glow-btn">🎲 随机抽题</button>
-                </form>
+                <a href="/guess" class="btn" onclick="showLoader()">获取题目</a>
+            {% endif %}
+            
+            <!-- 结果展示 -->
+            {% if result %}
+                <div class="result {{ 'correct' if result.is_correct else 'wrong' }}">
+                    {% if result.is_correct %}
+                        ✅ 恭喜答对了！
+                    {% else %}
+                        ❌ 正确答案：{{ result.correct_answer }}
+                        <p class="user-answer">你的答案：{{ result.user_answer }}</p>
+                    {% endif %}
+                    <a href="/guess" class="btn">下一题</a>
+                </div>
             {% endif %}
         </div>
-    </main>
 
-    <!-- 烟花容器 -->
-    <div id="fireworks"></div>
+        <!-- 题库统计 -->
+        <div class="stats">
+            当前题库共有 {{ riddles|length }} 道灯谜
+            {% if error %}<div class="error">{{ error }}</div>{% endif %}
+        </div>
+    </div>
 
-    <script src="{{ url_for('static', filename='effects.js') }}"></script>
+    <script src="/static/script.js"></script>
 </body>
 </html>
