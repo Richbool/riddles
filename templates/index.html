@@ -40,9 +40,9 @@
                 </div>
                 {% else %}
                 <div class="result-fail">
-                    <div class="answer-section">
-                        <p class="user-answer">❌ 你的答案：{{ result.user_answer }}</p>
-                        <p class="correct-answer">✅ 正确答案：{{ result.correct_answer }}</p>
+                    <div class="user-answer-section">
+                        <p>❌ 你的答案：{{ result.user_answer }}</p>
+                        <p>✅ 正确答案：{{ result.correct_answer }}</p>
                     </div>
                     <button class="next-btn" onclick="nextRiddle()">下一题 ➔</button>
                 </div>
@@ -52,14 +52,37 @@
         </main>
     </div>
 
-
+    <!-- 修复后的JavaScript代码 -->
     <script>
+        function startGame() {
+            window.location.href = "/start";
+        }
+
+        // 优化后的答案提交函数
         function submitAnswer(form) {
-            const answer = document.getElementById('answerInput').value;
-            const doubleEncoded = encodeURIComponent(encodeURIComponent(answer));
-            window.location.href = `/check/${doubleEncoded}`;
+            const answerInput = document.getElementById('answerInput');
+            const rawAnswer = answerInput.value.trim();
+            
+            if (!rawAnswer) {
+                alert('请输入答案');
+                return false;
+            }
+
+            // 双重编码处理特殊字符
+            const encodedAnswer = encodeURIComponent(encodeURIComponent(rawAnswer));
+            window.location.href = `/check/${encodedAnswer}`;
             return false;
-    }
+        }
+
+        function nextRiddle() {
+            window.location.href = "/next";
+        }
+
+        // 自动聚焦输入框
+        window.addEventListener('DOMContentLoaded', () => {
+            const input = document.getElementById('answerInput');
+            input && input.focus();
+        });
     </script>
 </body>
 </html>
