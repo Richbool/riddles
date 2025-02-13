@@ -18,8 +18,7 @@
                     <form onsubmit="return submitAnswer(this)">
                         <input type="text" id="answerInput" 
                                placeholder="输入答案..." 
-                               autocomplete="off"
-                               autofocus>
+                               autocomplete="off">
                         <button type="submit">提交答案</button>
                     </form>
                 </div>
@@ -53,11 +52,13 @@
         </main>
     </div>
 
+    <!-- 修复后的JavaScript代码 -->
     <script>
         function startGame() {
             window.location.href = "/start";
         }
 
+        // 优化后的答案提交函数
         function submitAnswer(form) {
             const answerInput = document.getElementById('answerInput');
             const rawAnswer = answerInput.value.trim();
@@ -67,8 +68,8 @@
                 return false;
             }
 
-            // 单次编码修复乱码
-            const encodedAnswer = encodeURIComponent(rawAnswer);
+            // 双重编码处理特殊字符
+            const encodedAnswer = encodeURIComponent(encodeURIComponent(rawAnswer));
             window.location.href = `/check/${encodedAnswer}`;
             return false;
         }
