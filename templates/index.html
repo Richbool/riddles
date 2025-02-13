@@ -52,27 +52,14 @@
         </main>
     </div>
 
-    <script>
-        function startGame() {
-            window.location.href = "/start";
-        }
 
+    <script>
         function submitAnswer(form) {
             const answer = document.getElementById('answerInput').value;
-            if (answer.trim().length === 0) return false;
-            window.location.href = `/check/${encodeURIComponent(answer)}`;
+            const doubleEncoded = encodeURIComponent(encodeURIComponent(answer));
+            window.location.href = `/check/${doubleEncoded}`;
             return false;
-        }
-
-        function nextRiddle() {
-            window.location.href = "/next";
-        }
-
-        // 自动聚焦输入框
-        window.addEventListener('DOMContentLoaded', () => {
-            const input = document.getElementById('answerInput');
-            input && input.focus();
-        });
+    }
     </script>
 </body>
 </html>
