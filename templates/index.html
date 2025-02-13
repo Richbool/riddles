@@ -18,7 +18,8 @@
                     <form onsubmit="return submitAnswer(this)">
                         <input type="text" id="answerInput" 
                                placeholder="输入答案..." 
-                               autocomplete="off">
+                               autocomplete="off"
+                               autofocus>
                         <button type="submit">提交答案</button>
                     </form>
                 </div>
@@ -40,9 +41,9 @@
                 </div>
                 {% else %}
                 <div class="result-fail">
-                    <div class="answer-section">
-                        <p class="user-answer">❌ 你的答案：{{ result.user_answer }}</p>
-                        <p class="correct-answer">✅ 正确答案：{{ result.correct_answer }}</p>
+                    <div class="user-answer-section">
+                        <p>❌ 你的答案：{{ result.user_answer }}</p>
+                        <p>✅ 正确答案：{{ result.correct_answer }}</p>
                     </div>
                     <button class="next-btn" onclick="nextRiddle()">下一题 ➔</button>
                 </div>
@@ -58,9 +59,17 @@
         }
 
         function submitAnswer(form) {
-            const answer = document.getElementById('answerInput').value;
-            if (answer.trim().length === 0) return false;
-            window.location.href = `/check/${encodeURIComponent(answer)}`;
+            const answerInput = document.getElementById('answerInput');
+            const rawAnswer = answerInput.value.trim();
+            
+            if (!rawAnswer) {
+                alert('请输入答案');
+                return false;
+            }
+
+            // 单次编码修复乱码
+            const encodedAnswer = encodeURIComponent(rawAnswer);
+            window.location.href = `/check/${encodedAnswer}`;
             return false;
         }
 
