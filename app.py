@@ -2,6 +2,7 @@ from flask import Flask, render_template, session, redirect, url_for
 import json
 import random
 import os
+from urllib.parse import unquote  # 新增解码库
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -29,12 +30,10 @@ def start_game():
     if not riddles:
         return redirect(url_for('home'))
 
-    # 获取未使用题目ID
     used_ids = session.get('used_ids', [])
     available_ids = [i for i in range(len(riddles)) if i not in used_ids]
     
     if not available_ids:
-        # 重置已用题目
         session['used_ids'] = []
         available_ids = list(range(len(riddles)))
 
@@ -56,13 +55,14 @@ def play():
                          riddle_text=current['text'] if current else None,
                          result=result)
 
-@app.route('/check/<user_answer>')
+# 修改路由和添加解码逻辑
+@app.route('/check/<path:user_answer>')
 def check_answer(user_answer):
     if 'current_riddle' not in session:
         return redirect(url_for('home'))
 
     correct = session['current_riddle']['answer']
-    user_ans = user_answer.strip().lower()
+    user_ans = unquote(user_answer).strip().lower()  # 添加解码处理
     result = {
         'is_correct': user_ans == correct,
         'user_answer': user_ans,
