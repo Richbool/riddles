@@ -19,7 +19,7 @@ body {
         var(--color5)
     );
     background-size: 400% 400%;
-    animation: gradientBG 5s ease infinite;
+    animation: gradientBG 7s ease infinite;
     font-family: 'Microsoft YaHei', sans-serif;
 }
 
