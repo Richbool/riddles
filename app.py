@@ -1,7 +1,8 @@
-from flask import Flask, render_template, request, session
+# app.py
 import os
 import json
 import random
+from flask import Flask, render_template, request, session, redirect, url_for
 
 app = Flask(__name__)
 app.secret_key = os.urandom(24)
@@ -20,53 +21,61 @@ def save_riddle(riddle, answer):
     riddles = load_riddles()
     riddles.append({'riddle': riddle, 'answer': answer.lower()})
     with open(RIDDLE_FILE, 'w', encoding='utf-8') as f:
-        json.dump(riddles, f, ensure_ascii=False)
+        json.dump(riddles, f, ensure_ascii=False, indent=2)
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
     if request.method == 'POST':
-        riddle = request.form['riddle'].strip()
-        answer = request.form['answer'].strip()
-        if riddle and answer:
+        riddle = request.form.get('riddle', '').strip()
+        answer = request.form.get('answer', '').strip()
+        if len(riddle) > 3 and len(answer) > 1:
             save_riddle(riddle, answer)
-        return render_template('index.html', riddles=load_riddles())
+        return redirect(url_for('index'))
 
-    return render_template('index.html', riddles=load_riddles())
-
-@app.route('/guess', methods=['GET', 'POST'])
-def guess():
     riddles = load_riddles()
-    
-    if request.method == 'GET':
-        if not riddles:
-            return render_template('index.html', error="❌ 题库为空！")
-        idx = random.randrange(len(riddles))
-        session['current'] = {
-            'id': idx,
-            'answer': riddles[idx]['answer'].lower(),
-            'text': riddles[idx]['riddle']
-        }
-        return render_template('index.html', 
-                             current=session['current']['text'],
-                             riddles=riddles)
-
-    if 'current' not in session:
-        return redirect('/guess')
-    
-    user_ans = request.form['answer'].strip().lower()
-    correct = session['current']['answer']
-    result = {
-        'is_correct': user_ans == correct,
-        'user_answer': user_ans,
-        'correct_answer': correct,
-        'current_riddle': session['current']['text']
-    }
-    session.pop('current', None)
-    
+    current = session.get('current', {}).get('text') if 'current' in session else None
+    result = session.pop('result', None) if 'result' in session else None
     return render_template('index.html',
-                         result=result,
                          riddles=riddles,
-                         current=result['current_riddle'])
+                         current=current,
+                         result=result)
+
+@app.route('/new')
+def new_riddle():
+    riddles = load_riddles()
+    if not riddles:
+        return redirect(url_for('index'))
+
+    previous_id = session.get('current', {}).get('id', -1)
+    available = [i for i in range(len(riddles)) if i != previous_id]
+    selected_id = random.choice(available) if available else 0
+
+    session['current'] = {
+        'id': selected_id,
+        'text': riddles[selected_id]['riddle'],
+        'answer': riddles[selected_id]['answer'].lower()
+    }
+    return redirect(url_for('index'))
+
+@app.route('/submit', methods=['POST'])
+def submit_answer():
+    if 'current' not in session:
+        return redirect(url_for('index'))
+
+    user_answer = request.form.get('answer', '').strip().lower()
+    correct_answer = session['current']['answer']
+
+    result = {
+        'is_correct': user_answer == correct_answer,
+        'user_answer': user_answer,
+        'correct_answer': correct_answer,
+        'question': session['current']['text']
+    }
+
+    session['result'] = result
+    if result['is_correct']:
+        session.pop('current', None)
+    return redirect(url_for('index'))
 
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=5000)
+    app.run(host='0.0.0.0', port=5000, debug=True)
