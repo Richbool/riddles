@@ -1,201 +1,77 @@
-<!-- templates/index.html -->
 <!DOCTYPE html>
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>元宵灯谜会 | xrq-rich.com</title>
-    <link rel="stylesheet" href="https://cdn.bootcdn.net/ajax/libs/font-awesome/6.4.0/css/all.min.css">
-    <style>
-        :root {
-            --primary: #ff4757;
-            --secondary: #ff6b6b;
-            --accent: #ffd93d;
-            --bg: linear-gradient(45deg, 
-                #ff3366 0%,
-                #ff6b6b 25%,
-                #ff9f43 50%,
-                #ffd93d 100%
-            );
-        }
-
-        body {
-            background: var(--bg);
-            min-height: 100vh;
-            margin: 0;
-            font-family: 'Microsoft YaHei', sans-serif;
-            animation: gradientFlow 12s linear infinite;
-            background-size: 400% 400%;
-        }
-
-        @keyframes gradientFlow {
-            0% { background-position: 0% 50%; }
-            50% { background-position: 100% 50%; }
-            100% { background-position: 0% 50%; }
-        }
-
-        .container {
-            max-width: 800px;
-            margin: 0 auto;
-            padding: 20px;
-        }
-
-        .card {
-            background: rgba(255, 255, 255, 0.95);
-            border-radius: 15px;
-            padding: 2rem;
-            margin: 2rem 0;
-            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-            backdrop-filter: blur(5px);
-            transition: transform 0.3s ease;
-        }
-
-        .card:hover {
-            transform: translateY(-5px);
-        }
-
-        h1 {
-            text-align: center;
-            color: #fff;
-            font-size: 2.8rem;
-            text-shadow: 0 0 15px rgba(255, 71, 87, 0.5);
-            margin: 2rem 0;
-        }
-
-        input[type="text"] {
-            width: calc(100% - 2rem);
-            padding: 1rem;
-            margin: 1rem auto;
-            display: block;
-            border: 2px solid var(--primary);
-            border-radius: 8px;
-            font-size: 1rem;
-            transition: all 0.3s ease;
-            background: rgba(255, 255, 255, 0.9);
-        }
-
-        input[type="text"]:focus {
-            border-color: var(--accent);
-            box-shadow: 0 0 15px rgba(255, 217, 61, 0.3);
-            transform: scale(1.02);
-        }
-
-        button {
-            display: block;
-            width: 200px;
-            padding: 1rem;
-            margin: 1rem auto;
-            background: linear-gradient(45deg, var(--primary), var(--secondary));
-            color: white;
-            border: none;
-            border-radius: 25px;
-            font-size: 1.1rem;
-            cursor: pointer;
-            transition: all 0.3s ease;
-        }
-
-        button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 5px 15px rgba(255, 71, 87, 0.3);
-        }
-
-        .result-box {
-            padding: 1.5rem;
-            border-radius: 8px;
-            margin: 1rem 0;
-            animation: popIn 0.4s ease;
-        }
-
-        .correct {
-            background: linear-gradient(135deg, #4cd13733, #44bd3233);
-            border: 2px solid #4cd137;
-        }
-
-        .wrong {
-            background: linear-gradient(135deg, #e8411833, #c2361633);
-            border: 2px solid #e84118;
-        }
-
-        .action-buttons {
-            display: flex;
-            gap: 1rem;
-            margin-top: 1rem;
-            justify-content: center;
-        }
-
-        @keyframes popIn {
-            from { opacity: 0; transform: scale(0.9); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        a {
-            text-decoration: none !important;
-        }
-    </style>
+    <link rel="stylesheet" href="{{ url_for('static', filename='style.css') }}">
 </head>
 <body>
     <div class="container">
         <h1>🏮 元宵灯谜会 🐉</h1>
-
-        <div class="card">
-            <form action="/" method="post">
-                <input type="text" name="riddle" placeholder="输入新谜题..." required>
-                <input type="text" name="answer" placeholder="输入正确答案..." required>
-                <button type="submit">保存新谜题</button>
-            </form>
-        </div>
-
-        <div class="card">
-            {% if current %}
-                <p class="riddle-text">{{ current }}</p>
-                <form action="/submit" method="post">
-                    <input type="text" name="answer" placeholder="输入你的答案..." required>
-                    <button type="submit">提交答案</button>
-                </form>
+        
+        <main class="game-container">
+            {% if riddle_text %}
+            <div class="riddle-box">
+                <div class="riddle-card">
+                    <p class="riddle-text">{{ riddle_text }}</p>
+                    <form onsubmit="return submitAnswer(this)">
+                        <input type="text" id="answerInput" 
+                               placeholder="输入答案..." 
+                               autocomplete="off">
+                        <button type="submit">提交答案</button>
+                    </form>
+                </div>
+            </div>
             {% else %}
-                <form action="/new" method="get">
-                    <button type="submit" style="background: #4cd137;">
-                        开始猜谜
-                    </button>
-                </form>
+            <div class="start-box">
+                <button class="start-btn" onclick="startGame()">
+                    点击开始猜谜
+                </button>
+            </div>
             {% endif %}
 
             {% if result %}
-                <div class="result-box {% if result.is_correct %}correct{% else %}wrong{% endif %}">
-                    {% if result.is_correct %}
-                        <p>🎉 回答正确！</p>
-                    {% else %}
-                        <p>❌ 你的答案：{{ result.user_answer }}</p>
-                        <p>✅ 正确答案：{{ result.correct_answer }}</p>
-                        <div class="action-buttons">
-                            <a href="/new">
-                                <button>下一题</button>
-                            </a>
-                        </div>
-                    {% endif %}
+            <div class="result-box {{ 'correct' if result.is_correct else 'wrong' }}">
+                {% if result.is_correct %}
+                <div class="result-success">
+                    <p>🎉 回答正确！</p>
+                    <button onclick="startGame()">继续挑战</button>
                 </div>
+                {% else %}
+                <div class="result-fail">
+                    <div class="answer-section">
+                        <p class="user-answer">❌ 你的答案：{{ result.user_answer }}</p>
+                        <p class="correct-answer">✅ 正确答案：{{ result.correct_answer }}</p>
+                    </div>
+                    <button class="next-btn" onclick="nextRiddle()">下一题 ➔</button>
+                </div>
+                {% endif %}
+            </div>
             {% endif %}
-        </div>
+        </main>
     </div>
 
     <script>
-        // 输入框动效
-        document.querySelectorAll('input').forEach(input => {
-            input.addEventListener('focus', () => {
-                input.style.transform = 'scale(1.02)';
-            });
-            input.addEventListener('blur', () => {
-                input.style.transform = 'scale(1)';
-            });
-        });
+        function startGame() {
+            window.location.href = "/start";
+        }
 
-        // 按钮加载状态
-        document.querySelectorAll('form').forEach(form => {
-            form.addEventListener('submit', function(e) {
-                const btn = this.querySelector('button');
-                btn.disabled = true;
-                btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> 提交中...';
-            });
+        function submitAnswer(form) {
+            const answer = document.getElementById('answerInput').value;
+            if (answer.trim().length === 0) return false;
+            window.location.href = `/check/${encodeURIComponent(answer)}`;
+            return false;
+        }
+
+        function nextRiddle() {
+            window.location.href = "/next";
+        }
+
+        // 自动聚焦输入框
+        window.addEventListener('DOMContentLoaded', () => {
+            const input = document.getElementById('answerInput');
+            input && input.focus();
         });
     </script>
 </body>
